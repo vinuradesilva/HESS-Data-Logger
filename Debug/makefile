@@ -9,6 +9,10 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
+-include Middlewares/Third_Party/FatFs/src/option/subdir.mk
+-include Middlewares/Third_Party/FatFs/src/subdir.mk
+-include FATFS/Target/subdir.mk
+-include FATFS/App/subdir.mk
 -include Drivers/STM32F1xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
@@ -61,7 +65,7 @@ main-build: DataLogger.elf secondary-outputs
 
 # Tool invocations
 DataLogger.elf DataLogger.map: $(OBJS) $(USER_OBJS) C:\Users\VINURA\STM32CubeIDE\workspace_1.13.2\Data_Logger\DataLogger\STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "DataLogger.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\VINURA\STM32CubeIDE\workspace_1.13.2\Data_Logger\DataLogger\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="DataLogger.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "DataLogger.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\VINURA\STM32CubeIDE\workspace_1.13.2\Data_Logger\DataLogger\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="DataLogger.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

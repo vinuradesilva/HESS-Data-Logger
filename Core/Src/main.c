@@ -18,10 +18,13 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "fatfs.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "fatfs_sd.h"
+#include "string.h"
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,7 +34,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+FATFS fs;
+FIL fil;
+char buffer[128];
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -43,11 +48,16 @@
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
+SPI_HandleTypeDef hspi2;
+
+TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
 /* USER CODE BEGIN PV */
-uint32_t buffer[12];
+uint32_t buf[12];
 uint32_t adc[12];
+float bat1, bat2, bat3, bat4, bat5, bat6, bat7, bat8, bat9, bat10;
+int a, b, c, d, count;
 
 /* USER CODE END PV */
 
@@ -57,6 +67,8 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_ADC1_Init(void);
+static void MX_SPI2_Init(void);
+static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -65,14 +77,60 @@ static void MX_ADC1_Init(void);
 /* USER CODE BEGIN 0 */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	for (int i = 0; i < 12; i++) {
-		adc[i] = 0.1 * buffer[i] + (1 - 0.1) * adc[i]; // store the values in the buffer in adc array
+		adc[i] = buf[i];
 	}
+}
+
+void save_data_to_csv()
+{a++;
+    // Mount the filesystem
+    f_mount(&fs, "", 0);
+b++;
+    // Open the CSV file
+    if (f_open(&fil, "data.csv", FA_OPEN_ALWAYS | FA_WRITE | FA_READ) == FR_OK)
+    {c++;
+        // Move the file pointer to the end
+        f_lseek(&fil, fil.fsize);
+
+        // Format the battery values into a CSV format with 2 decimal places
+        sprintf(buffer, "%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n", bat1, bat2, bat3, bat4, bat5, bat6, bat7, bat8, bat9, bat10);
+
+        // Write the formatted string to the file
+        f_puts(buffer, &fil);
+
+        // Close the file
+        f_close(&fil);
+    }
+    else{
+//    	Error_Handler();
+    }
+
+    // Unmount the filesystem
+    f_mount(NULL, "", 1);
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim->Instance == TIM3){
-		HAL_ADC_Start_DMA(&hadc1, buffer, 12);
+		HAL_ADC_Start_DMA(&hadc1, buf, 12);
+
 		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+
+		bat1 = adc[0];
+		bat2 = adc[1];
+		bat3 = adc[2];
+		bat4 = adc[3];
+		bat5 = adc[4];
+		bat6 = adc[5];
+		bat7 = adc[6];
+		bat8 = adc[7];
+		bat9 = adc[8];
+		bat10 = adc[9];
+
+	}
+
+	if(htim->Instance == TIM2){
+		//save_data_to_csv();
+		count++;
 	}
 }
 /* USER CODE END 0 */
@@ -109,15 +167,29 @@ int main(void)
   MX_DMA_Init();
   MX_TIM3_Init();
   MX_ADC1_Init();
+  MX_SPI2_Init();
+  MX_FATFS_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim3);
+  HAL_TIM_Base_Start_IT(&htim2);
 
+//  f_mount(&fs, "", 0);
+
+//  HAL_Delay(500);
+//  f_mount(&fs, "", 0);
+//  f_open(&fil, "write.txt", FA_OPEN_ALWAYS | FA_WRITE | FA_READ);
+//  f_lseek(&fil, fil.fsize);
+//  f_puts("Hello from Nizar\n", &fil);
+//  f_close(&fil);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  save_data_to_csv();
+	  HAL_Delay(2000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -315,6 +387,89 @@ static void MX_ADC1_Init(void)
 }
 
 /**
+  * @brief SPI2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI2_Init(void)
+{
+
+  /* USER CODE BEGIN SPI2_Init 0 */
+
+  /* USER CODE END SPI2_Init 0 */
+
+  /* USER CODE BEGIN SPI2_Init 1 */
+
+  /* USER CODE END SPI2_Init 1 */
+  /* SPI2 parameter configuration*/
+  hspi2.Instance = SPI2;
+  hspi2.Init.Mode = SPI_MODE_MASTER;
+  hspi2.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi2.Init.NSS = SPI_NSS_SOFT;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+  hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi2.Init.CRCPolynomial = 10;
+  if (HAL_SPI_Init(&hspi2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI2_Init 2 */
+
+  /* USER CODE END SPI2_Init 2 */
+
+}
+
+/**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 8000-1;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 2000-1;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
   * @brief TIM3 Initialization Function
   * @param None
   * @retval None
@@ -394,12 +549,22 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
+
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -420,6 +585,8 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+	  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+	  HAL_Delay(100);
   }
   /* USER CODE END Error_Handler_Debug */
 }
