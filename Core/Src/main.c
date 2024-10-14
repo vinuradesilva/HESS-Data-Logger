@@ -25,6 +25,7 @@
 #include "fatfs_sd.h"
 #include "string.h"
 #include "stdio.h"
+#include "ds1307.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,15 +49,19 @@ char buffer[128];
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
+I2C_HandleTypeDef hi2c1;
+
 SPI_HandleTypeDef hspi2;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
 /* USER CODE BEGIN PV */
-uint32_t buf[12];
-uint32_t adc[12];
+uint32_t buf[10];
+uint32_t adc[10];
 float bat1, bat2, bat3, bat4, bat5, bat6, bat7, bat8, bat9, bat10;
+uint8_t sec, min, hour;
+uint8_t week_day, day, month, year;
 int a, b, c, d, count;
 
 /* USER CODE END PV */
@@ -69,37 +74,48 @@ static void MX_TIM3_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void get_time(){
+	rtc_get_time(&hour, &min, &sec);
+	rtc_get_date(&week_day, &day, &month, &year);
+}
+
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
-	for (int i = 0; i < 12; i++) {
+	for (int i = 0; i < 10; i++) {
 		adc[i] = buf[i];
 	}
 }
 
 void save_data_to_csv()
-{a++;
+{
+	get_time();
+
     // Mount the filesystem
     f_mount(&fs, "", 0);
-b++;
+
     // Open the CSV file
     if (f_open(&fil, "data.csv", FA_OPEN_ALWAYS | FA_WRITE | FA_READ) == FR_OK)
-    {c++;
+    {
         // Move the file pointer to the end
         f_lseek(&fil, fil.fsize);
 
         // Format the battery values into a CSV format with 2 decimal places
-        sprintf(buffer, "%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n", bat1, bat2, bat3, bat4, bat5, bat6, bat7, bat8, bat9, bat10);
+        sprintf(buffer, "%02d-%02d-%02d %02d:%02d:%02d,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n", year + 2000, month, day, hour, min, sec, bat1, bat2, bat3, bat4, bat5, bat6, bat7, bat8, bat9, bat10);
+
 
         // Write the formatted string to the file
         f_puts(buffer, &fil);
 
         // Close the file
         f_close(&fil);
+
+        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
     }
     else{
 //    	Error_Handler();
@@ -113,18 +129,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim->Instance == TIM3){
 		HAL_ADC_Start_DMA(&hadc1, buf, 12);
 
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-
-		bat1 = adc[0];
-		bat2 = adc[1];
-		bat3 = adc[2];
-		bat4 = adc[3];
-		bat5 = adc[4];
-		bat6 = adc[5];
-		bat7 = adc[6];
-		bat8 = adc[7];
-		bat9 = adc[8];
-		bat10 = adc[9];
+		bat1 = adc[0];		//A5
+		bat2 = adc[1];		//A6
+		bat3 = adc[2];		//A7
+		bat4 = adc[3];		//B0
+		bat5 = adc[4];		//B1
+		bat6 = adc[5];		//A0
+		bat7 = adc[6];		//A1
+		bat8 = adc[7];		//A2
+		bat9 = adc[8];		//A3
+		bat10 = adc[9];		//A4
 
 	}
 
@@ -170,9 +184,15 @@ int main(void)
   MX_SPI2_Init();
   MX_FATFS_Init();
   MX_TIM2_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim3);
   HAL_TIM_Base_Start_IT(&htim2);
+
+  rtc_init(3, 1, 1);
+
+//  rtc_set_time(19, 25, 30);
+//  rtc_set_date(01, 14, 10, 24);
 
 //  f_mount(&fs, "", 0);
 
@@ -266,7 +286,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 12;
+  hadc1.Init.NbrOfConversion = 10;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     Error_Handler();
@@ -362,27 +382,43 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
-  sConfig.Rank = ADC_REGULAR_RANK_11;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_VREFINT;
-  sConfig.Rank = ADC_REGULAR_RANK_12;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
+
+}
+
+/**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 400000;
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
 
 }
 
