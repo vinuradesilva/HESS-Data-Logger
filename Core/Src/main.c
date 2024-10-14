@@ -26,6 +26,9 @@
 #include "string.h"
 #include "stdio.h"
 #include "ds1307.h"
+#include "ssd1306.h"
+#include "fonts.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,6 +53,7 @@ ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
 I2C_HandleTypeDef hi2c1;
+I2C_HandleTypeDef hi2c2;
 
 SPI_HandleTypeDef hspi2;
 
@@ -75,6 +79,7 @@ static void MX_ADC1_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_I2C2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -115,7 +120,6 @@ void save_data_to_csv()
         // Close the file
         f_close(&fil);
 
-        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
     }
     else{
 //    	Error_Handler();
@@ -140,11 +144,25 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		bat9 = adc[8];		//A3
 		bat10 = adc[9];		//A4
 
+		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+
 	}
 
 	if(htim->Instance == TIM2){
-		//save_data_to_csv();
-		count++;
+		get_time();
+
+		SSD1306_Clear();
+		SSD1306_GotoXY(0, 0);
+
+		sprintf(buffer, "%02d/%02d/%02d", day, month, year + 2000);
+		SSD1306_Puts(buffer, &Font_11x18, 1);
+
+		SSD1306_GotoXY(0, 30);
+
+		sprintf(buffer, "%02d:%02d:%02d", hour, min, sec);
+		SSD1306_Puts(buffer, &Font_11x18, 1);
+
+		SSD1306_UpdateScreen();
 	}
 }
 /* USER CODE END 0 */
@@ -185,11 +203,13 @@ int main(void)
   MX_FATFS_Init();
   MX_TIM2_Init();
   MX_I2C1_Init();
+  MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim3);
   HAL_TIM_Base_Start_IT(&htim2);
 
   rtc_init(3, 1, 1);
+  SSD1306_Init();
 
 //  rtc_set_time(19, 25, 30);
 //  rtc_set_date(01, 14, 10, 24);
@@ -209,7 +229,7 @@ int main(void)
   while (1)
   {
 	  save_data_to_csv();
-	  HAL_Delay(2000);
+	  HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -423,6 +443,40 @@ static void MX_I2C1_Init(void)
 }
 
 /**
+  * @brief I2C2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C2_Init(void)
+{
+
+  /* USER CODE BEGIN I2C2_Init 0 */
+
+  /* USER CODE END I2C2_Init 0 */
+
+  /* USER CODE BEGIN I2C2_Init 1 */
+
+  /* USER CODE END I2C2_Init 1 */
+  hi2c2.Instance = I2C2;
+  hi2c2.Init.ClockSpeed = 400000;
+  hi2c2.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c2.Init.OwnAddress1 = 0;
+  hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c2.Init.OwnAddress2 = 0;
+  hi2c2.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c2.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C2_Init 2 */
+
+  /* USER CODE END I2C2_Init 2 */
+
+}
+
+/**
   * @brief SPI2 Initialization Function
   * @param None
   * @retval None
@@ -481,7 +535,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 8000-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 2000-1;
+  htim2.Init.Period = 500-1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
