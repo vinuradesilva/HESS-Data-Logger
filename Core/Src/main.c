@@ -149,20 +149,20 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	}
 
 	if(htim->Instance == TIM2){
-		get_time();
-
-		SSD1306_Clear();
-		SSD1306_GotoXY(0, 0);
-
-		sprintf(buffer, "%02d/%02d/%02d", day, month, year + 2000);
-		SSD1306_Puts(buffer, &Font_11x18, 1);
-
-		SSD1306_GotoXY(0, 30);
-
-		sprintf(buffer, "%02d:%02d:%02d", hour, min, sec);
-		SSD1306_Puts(buffer, &Font_11x18, 1);
-
-		SSD1306_UpdateScreen();
+//		get_time();
+//
+//		SSD1306_Clear();
+//		SSD1306_GotoXY(0, 0);
+//
+//		sprintf(buffer, "%02d/%02d/%02d", day, month, year + 2000);
+//		SSD1306_Puts(buffer, &Font_11x18, 1);
+//
+//		SSD1306_GotoXY(0, 30);
+//
+//		sprintf(buffer, "%02d:%02d:%02d", hour, min, sec);
+//		SSD1306_Puts(buffer, &Font_11x18, 1);
+//
+//		SSD1306_UpdateScreen();
 	}
 }
 /* USER CODE END 0 */
@@ -228,8 +228,18 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  save_data_to_csv();
-	  HAL_Delay(1000);
+//	  save_data_to_csv();
+//	  HAL_Delay(1000);
+
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_SET);
+	  HAL_Delay(5000);
+	  a=1;
+
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+	  HAL_Delay(5000);
+	  a=0;
+
+	  get_time();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -535,7 +545,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 8000-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 500-1;
+  htim2.Init.Period = 1000-1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -640,7 +650,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9|GPIO_PIN_12, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
@@ -649,8 +659,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PA9 */
-  GPIO_InitStruct.Pin = GPIO_PIN_9;
+  /*Configure GPIO pins : PA9 PA12 */
+  GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_12;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
