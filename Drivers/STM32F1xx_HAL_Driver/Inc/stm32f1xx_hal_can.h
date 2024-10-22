@@ -686,13 +686,13 @@ HAL_StatusTypeDef HAL_CAN_RequestSleep(CAN_HandleTypeDef *hcan);
 HAL_StatusTypeDef HAL_CAN_WakeUp(CAN_HandleTypeDef *hcan);
 uint32_t HAL_CAN_IsSleepActive(const CAN_HandleTypeDef *hcan);
 HAL_StatusTypeDef HAL_CAN_AddTxMessage(CAN_HandleTypeDef *hcan, const CAN_TxHeaderTypeDef *pHeader,
-                                       const uint8_t aData[], uint32_t *pTxMailbox);
+                                       const float aData[], uint32_t *pTxMailbox);
 HAL_StatusTypeDef HAL_CAN_AbortTxRequest(CAN_HandleTypeDef *hcan, uint32_t TxMailboxes);
 uint32_t HAL_CAN_GetTxMailboxesFreeLevel(const CAN_HandleTypeDef *hcan);
 uint32_t HAL_CAN_IsTxMessagePending(const CAN_HandleTypeDef *hcan, uint32_t TxMailboxes);
 uint32_t HAL_CAN_GetTxTimestamp(const CAN_HandleTypeDef *hcan, uint32_t TxMailbox);
 HAL_StatusTypeDef HAL_CAN_GetRxMessage(CAN_HandleTypeDef *hcan, uint32_t RxFifo,
-                                       CAN_RxHeaderTypeDef *pHeader, uint8_t aData[]);
+                                       CAN_RxHeaderTypeDef *pHeader, float aData[]);
 uint32_t HAL_CAN_GetRxFifoFillLevel(const CAN_HandleTypeDef *hcan, uint32_t RxFifo);
 
 /**

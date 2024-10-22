@@ -8,12 +8,12 @@
 ../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c:1113:19:HAL_CAN_RequestSleep	24	static
 ../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c:1144:19:HAL_CAN_WakeUp	24	static
 ../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c:1191:10:HAL_CAN_IsSleepActive	24	static
-../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c:1222:19:HAL_CAN_AddTxMessage	40	static
+../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c:1222:19:HAL_CAN_AddTxMessage	48	static
 ../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c:1322:19:HAL_CAN_AbortTxRequest	24	static
 ../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c:1371:10:HAL_CAN_GetTxMailboxesFreeLevel	24	static
 ../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c:1414:10:HAL_CAN_IsTxMessagePending	24	static
 ../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c:1446:10:HAL_CAN_GetTxTimestamp	40	static,ignoring_inline_asm
-../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c:1480:19:HAL_CAN_GetRxMessage	32	static
+../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c:1480:19:HAL_CAN_GetRxMessage	40	static
 ../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c:1580:10:HAL_CAN_GetRxFifoFillLevel	24	static
 ../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c:1633:19:HAL_CAN_ActivateNotification	24	static
 ../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c:1666:19:HAL_CAN_DeactivateNotification	24	static

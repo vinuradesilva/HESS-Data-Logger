@@ -1220,7 +1220,7 @@ uint32_t HAL_CAN_IsSleepActive(const CAN_HandleTypeDef *hcan)
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_CAN_AddTxMessage(CAN_HandleTypeDef *hcan, const CAN_TxHeaderTypeDef *pHeader,
-                                       const uint8_t aData[], uint32_t *pTxMailbox)
+                                       const float aData[], uint32_t *pTxMailbox)
 {
   uint32_t transmitmailbox;
   HAL_CAN_StateTypeDef state = hcan->State;
@@ -1478,7 +1478,7 @@ uint32_t HAL_CAN_GetTxTimestamp(const CAN_HandleTypeDef *hcan, uint32_t TxMailbo
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_CAN_GetRxMessage(CAN_HandleTypeDef *hcan, uint32_t RxFifo,
-                                       CAN_RxHeaderTypeDef *pHeader, uint8_t aData[])
+                                       CAN_RxHeaderTypeDef *pHeader, float aData[])
 {
   HAL_CAN_StateTypeDef state = hcan->State;
 

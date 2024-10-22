@@ -71,7 +71,7 @@ uint8_t week_day, day, month, year;
 CAN_TxHeaderTypeDef TxHeader;
 CAN_RxHeaderTypeDef RxHeader;
 
-float TxData[6];
+float TxData[1];
 float RxData[6];
 
 uint32_t TxMailbox;
@@ -171,18 +171,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		//Activate notificatio
 		HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
 
-		TxHeader.DLC = 6;
+		TxHeader.DLC = 1;
 		TxHeader.IDE = CAN_ID_STD;
 		TxHeader.RTR = CAN_RTR_DATA;
 		TxHeader.StdId = 0x446;
 		TxHeader.TransmitGlobalTime = DISABLE;
 
-		TxData[0] = bat1;
-		TxData[1] = bat2;
-		TxData[2] = bat3;
-		TxData[3] = bat4;
-		TxData[4] = bat5;
-		TxData[5] = 1;
+		TxData[0] = 1;
 
 		HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
 
@@ -198,12 +193,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
 		HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
 
-		TxData[0] = bat6;
-		TxData[1] = bat7;
-		TxData[2] = bat8;
-		TxData[3] = bat9;
-		TxData[4] = bat10;
-		TxData[5] = 2;
+		TxData[0] = 2;
 
 		HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
 
