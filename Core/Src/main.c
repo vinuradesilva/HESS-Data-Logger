@@ -26,8 +26,8 @@
 #include "string.h"
 #include "stdio.h"
 #include "ds1307.h"
-#include "ssd1306.h"
-#include "fonts.h"
+//#include "ssd1306.h"
+//#include "fonts.h"
 
 /* USER CODE END Includes */
 
@@ -55,7 +55,6 @@ DMA_HandleTypeDef hdma_adc1;
 CAN_HandleTypeDef hcan;
 
 I2C_HandleTypeDef hi2c1;
-I2C_HandleTypeDef hi2c2;
 
 SPI_HandleTypeDef hspi2;
 
@@ -65,10 +64,21 @@ TIM_HandleTypeDef htim3;
 /* USER CODE BEGIN PV */
 uint32_t buf[10];
 uint32_t adc[10];
-float bat1, bat2, bat3, bat4, bat5, bat6, bat7, bat8, bat9, bat10;
+float bat1, bat2, bat3, bat4, bat5, bat6, bat7, bat8, bat9, bat10, bat11, bat12, bat13, bat14, bat15, bat16, bat17, bat18, bat19, bat20;
 uint8_t sec, min, hour;
 uint8_t week_day, day, month, year;
-int a, b, c, d, count;
+
+CAN_TxHeaderTypeDef TxHeader;
+CAN_RxHeaderTypeDef RxHeader;
+
+float TxData[6];
+float RxData[6];
+
+uint32_t TxMailbox;
+
+int dataReceived;
+
+int press;
 
 /* USER CODE END PV */
 
@@ -80,9 +90,8 @@ static void MX_TIM3_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_TIM2_Init(void);
-static void MX_I2C1_Init(void);
-static void MX_I2C2_Init(void);
 static void MX_CAN_Init(void);
+static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -114,7 +123,7 @@ void save_data_to_csv()
         f_lseek(&fil, fil.fsize);
 
         // Format the battery values into a CSV format with 2 decimal places
-        sprintf(buffer, "%02d-%02d-%02d %02d:%02d:%02d,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n", year + 2000, month, day, hour, min, sec, bat1, bat2, bat3, bat4, bat5, bat6, bat7, bat8, bat9, bat10);
+        sprintf(buffer, "%02d-%02d-%02d %02d:%02d:%02d,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n", year + 2000, month, day, hour, min, sec, bat1, bat2, bat3, bat4, bat5, bat6, bat7, bat8, bat9, bat10, bat11, bat12, bat13, bat14, bat15, bat16, bat17, bat18, bat19, bat20);
 
 
         // Write the formatted string to the file
@@ -132,6 +141,18 @@ void save_data_to_csv()
     f_mount(NULL, "", 1);
 }
 
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
+	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData);
+
+	if(RxData[5] == 1){
+		dataReceived = 1;
+	}
+
+	if(RxData[5] == 2){
+		dataReceived == 2;
+	}
+}
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim->Instance == TIM3){
 		HAL_ADC_Start_DMA(&hadc1, buf, 12);
@@ -147,27 +168,112 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		bat9 = adc[8];		//A3
 		bat10 = adc[9];		//A4
 
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+		//Activate notificatio
+		HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+
+		TxHeader.DLC = 6;
+		TxHeader.IDE = CAN_ID_STD;
+		TxHeader.RTR = CAN_RTR_DATA;
+		TxHeader.StdId = 0x446;
+		TxHeader.TransmitGlobalTime = DISABLE;
+
+		TxData[0] = bat1;
+		TxData[1] = bat2;
+		TxData[2] = bat3;
+		TxData[3] = bat4;
+		TxData[4] = bat5;
+		TxData[5] = 1;
+
+		HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
+
+		if (dataReceived == 1){
+			bat11 = RxData[0];
+			bat12 = RxData[1];
+			bat13 = RxData[2];
+			bat14 = RxData[3];
+			bat15 = RxData[4];
+		}
+
+		dataReceived = 0;
+
+		HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+
+		TxData[0] = bat6;
+		TxData[1] = bat7;
+		TxData[2] = bat8;
+		TxData[3] = bat9;
+		TxData[4] = bat10;
+		TxData[5] = 2;
+
+		HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
+
+		if (dataReceived == 2){
+			bat16 = RxData[0];
+			bat17 = RxData[1];
+			bat18 = RxData[2];
+			bat19 = RxData[3];
+			bat20 = RxData[4];
+		}
+
+		dataReceived = 0;
+
+		save_data_to_csv();
 
 	}
 
-	if(htim->Instance == TIM2){
+//	if(htim->Instance == TIM2){
 //		get_time();
 //
 //		SSD1306_Clear();
 //		SSD1306_GotoXY(0, 0);
 //
-//		sprintf(buffer, "%02d/%02d/%02d", day, month, year + 2000);
+//		sprintf(buffer, "%02d / %02d / %02d", day, month, year + 2000);
 //		SSD1306_Puts(buffer, &Font_11x18, 1);
 //
 //		SSD1306_GotoXY(0, 30);
 //
-//		sprintf(buffer, "%02d:%02d:%02d", hour, min, sec);
+//		sprintf(buffer, "%02d : %02d", hour, min);
 //		SSD1306_Puts(buffer, &Font_11x18, 1);
 //
 //		SSD1306_UpdateScreen();
-	}
+//	}
 }
+
+//void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
+//    const int numValuesPerPage = 3;  // Display 3 values per press
+//    const int totalValues = 20;      // Total ADC values (Bat 1 to Bat 20)
+//    int baseIndex;
+//
+//    if (press >= 1 && press <= (totalValues + numValuesPerPage - 1) / numValuesPerPage) {
+//        SSD1306_Clear();
+//
+//        baseIndex = (press - 1) * numValuesPerPage;  // Starting index for the current page
+//
+//        // Loop to display up to `numValuesPerPage` items, ensuring we don't exceed `totalValues`
+//        for (int i = 0; i < numValuesPerPage; i++) {
+//            int currentIndex = baseIndex + i;
+//
+//            if (currentIndex < totalValues) {  // Ensure we don't exceed the total number of values
+//                SSD1306_GotoXY(0, i * 20);  // Set cursor for each row (0, 20, 40)
+//
+//                // Format and display the "Bat x: value" string
+//                sprintf(buffer, "Bat %d: %d", currentIndex + 1, adc[currentIndex]);
+//                SSD1306_Puts(buffer, &Font_11x18, 1);
+//            }
+//        }
+//
+//        // Update the display to show the content
+//        SSD1306_UpdateScreen();
+//    }
+//
+//    // Reset `press` after displaying all pages, or increment for the next page
+//    if (press >= (totalValues + numValuesPerPage - 1) / numValuesPerPage) {
+//        press = 1;
+//    } else {
+//        press++;
+//    }
+//}
+
 /* USER CODE END 0 */
 
 /**
@@ -205,16 +311,22 @@ int main(void)
   MX_SPI2_Init();
   MX_FATFS_Init();
   MX_TIM2_Init();
-  MX_I2C1_Init();
-  MX_I2C2_Init();
   MX_CAN_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim3);
   HAL_TIM_Base_Start_IT(&htim2);
 
   rtc_init(3, 1, 1);
-  SSD1306_Init();
+//  SSD1306_Init();
 
+  HAL_CAN_Start(&hcan);
+
+//  TxHeader.DLC = 9;
+//  TxHeader.IDE = CAN_ID_STD;
+//  TxHeader.RTR = CAN_RTR_DATA;
+//  TxHeader.StdId = 0x446;
+//  TxHeader.TransmitGlobalTime = DISABLE;
 //  rtc_set_time(19, 25, 30);
 //  rtc_set_date(01, 14, 10, 24);
 
@@ -232,18 +344,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//	  save_data_to_csv();
-//	  HAL_Delay(1000);
-
-	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_SET);
-	  HAL_Delay(5000);
-	  a=1;
-
-	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
-	  HAL_Delay(5000);
-	  a=0;
-
-	  get_time();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -438,11 +538,11 @@ static void MX_CAN_Init(void)
 
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
-  hcan.Init.Prescaler = 16;
+  hcan.Init.Prescaler = 2;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_1TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_1TQ;
+  hcan.Init.TimeSeg1 = CAN_BS1_5TQ;
+  hcan.Init.TimeSeg2 = CAN_BS2_2TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
   hcan.Init.AutoBusOff = DISABLE;
   hcan.Init.AutoWakeUp = DISABLE;
@@ -454,6 +554,19 @@ static void MX_CAN_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN_Init 2 */
+  CAN_FilterTypeDef canfilterconfig;
+
+  canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
+  canfilterconfig.FilterBank = 10;
+  canfilterconfig.FilterFIFOAssignment = CAN_RX_FIFO0; //DATA WILL BE RECEIVED BY THIS
+  canfilterconfig.FilterIdHigh = 0x103<<5;
+  canfilterconfig.FilterIdLow = 0x0000;
+  canfilterconfig.FilterMaskIdHigh = 0x103<<5;
+  canfilterconfig.FilterMaskIdLow = 0x0000;
+  canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK ;
+  canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
+
+  HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);
 
   /* USER CODE END CAN_Init 2 */
 
@@ -475,7 +588,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.ClockSpeed = 400000;
+  hi2c1.Init.ClockSpeed = 100000;
   hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -490,40 +603,6 @@ static void MX_I2C1_Init(void)
   /* USER CODE BEGIN I2C1_Init 2 */
 
   /* USER CODE END I2C1_Init 2 */
-
-}
-
-/**
-  * @brief I2C2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_I2C2_Init(void)
-{
-
-  /* USER CODE BEGIN I2C2_Init 0 */
-
-  /* USER CODE END I2C2_Init 0 */
-
-  /* USER CODE BEGIN I2C2_Init 1 */
-
-  /* USER CODE END I2C2_Init 1 */
-  hi2c2.Instance = I2C2;
-  hi2c2.Init.ClockSpeed = 400000;
-  hi2c2.Init.DutyCycle = I2C_DUTYCYCLE_2;
-  hi2c2.Init.OwnAddress1 = 0;
-  hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c2.Init.OwnAddress2 = 0;
-  hi2c2.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c2.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN I2C2_Init 2 */
-
-  /* USER CODE END I2C2_Init 2 */
 
 }
 
@@ -631,7 +710,7 @@ static void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 8000-1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 1000-1;
+  htim3.Init.Period = 5000-1;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
@@ -691,7 +770,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9|GPIO_PIN_12, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
@@ -700,12 +779,22 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA9 PA12 */
-  GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_12;
+  /*Configure GPIO pin : Push_Button_Pin */
+  GPIO_InitStruct.Pin = Push_Button_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(Push_Button_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
