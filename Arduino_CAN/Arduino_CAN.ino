@@ -2,10 +2,12 @@
 #include <mcp2515.h>
 
 struct can_frame canMsg;
+struct can_frame canMsgR;
 
 MCP2515 mcp2515(10);
 
 float bat11, bat12, bat13, bat14, bat15, bat16, bat17, bat18, bat19, bat20;
+int a, b, c, d, e;
 
 void setup() {
   Serial.begin(9600);
@@ -29,7 +31,11 @@ void loop() {
   bat19 = analogRead(A8);
   bat20 = analogRead(A9);
 
-  if(mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK){
+  if(mcp2515.readMessage(&canMsgR) == MCP2515::ERROR_OK){
+    a++;
+    Serial.print("a: ");
+    Serial.println(a);
+    
     if(canMsg.data[0] == 1){
 
       canMsg.can_id = 0x103;
@@ -56,6 +62,13 @@ void loop() {
       canMsg.data[5] = 2;
 
       mcp2515.sendMessage(&canMsg);
+
     }
   }
+  else{
+    b = canMsg.data[0];
+    Serial.print("b: ");
+    Serial.println(b);
+  }
+  delay(1000);
 }

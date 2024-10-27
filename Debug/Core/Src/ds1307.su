@@ -1,9 +1,0 @@
-../Core/Src/ds1307.c:6:9:bcd2bin	16	static
-../Core/Src/ds1307.c:10:9:bin2bcd	16	static
-../Core/Src/ds1307.c:14:9:rtc_read	40	static
-../Core/Src/ds1307.c:25:6:rtc_write	32	static
-../Core/Src/ds1307.c:32:6:rtc_init	16	static
-../Core/Src/ds1307.c:41:6:rtc_get_time	48	static
-../Core/Src/ds1307.c:53:6:rtc_set_time	40	static
-../Core/Src/ds1307.c:61:6:rtc_get_date	48	static
-../Core/Src/ds1307.c:74:6:rtc_set_date	48	static

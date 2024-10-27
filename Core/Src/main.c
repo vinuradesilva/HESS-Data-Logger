@@ -52,8 +52,6 @@ char buffer[128];
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
-CAN_HandleTypeDef hcan;
-
 I2C_HandleTypeDef hi2c1;
 
 SPI_HandleTypeDef hspi2;
@@ -67,18 +65,20 @@ uint32_t adc[10];
 float bat1, bat2, bat3, bat4, bat5, bat6, bat7, bat8, bat9, bat10, bat11, bat12, bat13, bat14, bat15, bat16, bat17, bat18, bat19, bat20;
 uint8_t sec, min, hour;
 uint8_t week_day, day, month, year;
+//
+//CAN_TxHeaderTypeDef TxHeader;
+//CAN_RxHeaderTypeDef RxHeader;
+//
+//float TxData[1];
+//float RxData[8];
 
-CAN_TxHeaderTypeDef TxHeader;
-CAN_RxHeaderTypeDef RxHeader;
+//uint32_t TxMailbox;
 
-float TxData[1];
-float RxData[6];
+//int dataReceived;
 
-uint32_t TxMailbox;
+int a, b, c, d, e, f, g, h, i, j, k;
 
-int dataReceived;
-
-int press;
+int initdone = 0;
 
 /* USER CODE END PV */
 
@@ -90,7 +90,6 @@ static void MX_TIM3_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_TIM2_Init(void);
-static void MX_CAN_Init(void);
 static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -104,6 +103,7 @@ void get_time(){
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
+	d++;
 	for (int i = 0; i < 10; i++) {
 		adc[i] = buf[i];
 	}
@@ -141,74 +141,81 @@ void save_data_to_csv()
     f_mount(NULL, "", 1);
 }
 
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
-	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData);
-
-	if(RxData[5] == 1){
-		dataReceived = 1;
-	}
-
-	if(RxData[5] == 2){
-		dataReceived == 2;
-	}
-}
+//void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
+//	g++;
+//	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData);
+//	h++;
+//
+//	if(RxData[5] == 1){
+//		dataReceived = 1;
+//	}
+//
+//	if(RxData[5] == 2){
+////		dataReceived == 2;
+//	}
+//}
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
-	if(htim->Instance == TIM3){
-		HAL_ADC_Start_DMA(&hadc1, buf, 12);
+	if(initdone == 1){
+		if(htim->Instance == TIM3){
+				HAL_ADC_Start_DMA(&hadc1, buf, 10);
 
-		bat1 = adc[0];		//A5
-		bat2 = adc[1];		//A6
-		bat3 = adc[2];		//A7
-		bat4 = adc[3];		//B0
-		bat5 = adc[4];		//B1
-		bat6 = adc[5];		//A0
-		bat7 = adc[6];		//A1
-		bat8 = adc[7];		//A2
-		bat9 = adc[8];		//A3
-		bat10 = adc[9];		//A4
+				bat1 = adc[0];		//A5
+				bat2 = adc[1];		//A6
+				bat3 = adc[2];		//A7
+				bat4 = adc[3];		//B0
+				bat5 = adc[4];		//B1
+				bat6 = adc[5];		//A0
+				bat7 = adc[6];		//A1
+				bat8 = adc[7];		//A2
+				bat9 = adc[8];		//A3
+				bat10 = adc[9];		//A4
 
-		//Activate notificatio
-		HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+		//		//Activate notification
+		//		HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+		//
+		//		TxHeader.DLC = 1;
+		//		TxHeader.IDE = CAN_ID_STD;
+		//		TxHeader.RTR = CAN_RTR_DATA;
+		//		TxHeader.StdId = 0x446;
+		//		TxHeader.TransmitGlobalTime = DISABLE;
+		//
+		//		TxData[0] = 1;
+		//		i++;
+		//
+		//		HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
+		//		j++;
+		//
+		//		if (dataReceived == 1){
+		//			k++;
+		//			bat11 = RxData[0];
+		//			bat12 = RxData[1];
+		//			bat13 = RxData[2];
+		//			bat14 = RxData[3];
+		//			bat15 = RxData[4];
+		//		}
+		//
+		//		dataReceived = 0;
+		//
+		//		HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+		//
+		//		TxData[0] = 2;
+		//
+		//		HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
+		//
+		//		if (dataReceived == 2){
+		//			bat16 = RxData[0];
+		//			bat17 = RxData[1];
+		//			bat18 = RxData[2];
+		//			bat19 = RxData[3];
+		//			bat20 = RxData[4];
+		//		}
+		//
+		//		dataReceived = 0;
 
-		TxHeader.DLC = 1;
-		TxHeader.IDE = CAN_ID_STD;
-		TxHeader.RTR = CAN_RTR_DATA;
-		TxHeader.StdId = 0x446;
-		TxHeader.TransmitGlobalTime = DISABLE;
+		//		save_data_to_csv();
 
-		TxData[0] = 1;
-
-		HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
-
-		if (dataReceived == 1){
-			bat11 = RxData[0];
-			bat12 = RxData[1];
-			bat13 = RxData[2];
-			bat14 = RxData[3];
-			bat15 = RxData[4];
-		}
-
-		dataReceived = 0;
-
-		HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
-
-		TxData[0] = 2;
-
-		HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
-
-		if (dataReceived == 2){
-			bat16 = RxData[0];
-			bat17 = RxData[1];
-			bat18 = RxData[2];
-			bat19 = RxData[3];
-			bat20 = RxData[4];
-		}
-
-		dataReceived = 0;
-
-		save_data_to_csv();
-
+			}
 	}
 
 //	if(htim->Instance == TIM2){
@@ -301,16 +308,17 @@ int main(void)
   MX_SPI2_Init();
   MX_FATFS_Init();
   MX_TIM2_Init();
-  MX_CAN_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim3);
   HAL_TIM_Base_Start_IT(&htim2);
+  e++;
 
   rtc_init(3, 1, 1);
+  f++;
 //  SSD1306_Init();
 
-  HAL_CAN_Start(&hcan);
+//  HAL_CAN_Start(&hcan);
 
 //  TxHeader.DLC = 9;
 //  TxHeader.IDE = CAN_ID_STD;
@@ -320,7 +328,9 @@ int main(void)
 //  rtc_set_time(19, 25, 30);
 //  rtc_set_date(01, 14, 10, 24);
 
-//  f_mount(&fs, "", 0);
+  f_mount(&fs, "", 0);
+  g++;
+  initdone = 1;
 
 //  HAL_Delay(500);
 //  f_mount(&fs, "", 0);
@@ -334,6 +344,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
+	  save_data_to_csv();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -513,56 +525,6 @@ static void MX_ADC1_Init(void)
 }
 
 /**
-  * @brief CAN Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_CAN_Init(void)
-{
-
-  /* USER CODE BEGIN CAN_Init 0 */
-
-  /* USER CODE END CAN_Init 0 */
-
-  /* USER CODE BEGIN CAN_Init 1 */
-
-  /* USER CODE END CAN_Init 1 */
-  hcan.Instance = CAN1;
-  hcan.Init.Prescaler = 2;
-  hcan.Init.Mode = CAN_MODE_NORMAL;
-  hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_5TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_2TQ;
-  hcan.Init.TimeTriggeredMode = DISABLE;
-  hcan.Init.AutoBusOff = DISABLE;
-  hcan.Init.AutoWakeUp = DISABLE;
-  hcan.Init.AutoRetransmission = DISABLE;
-  hcan.Init.ReceiveFifoLocked = DISABLE;
-  hcan.Init.TransmitFifoPriority = DISABLE;
-  if (HAL_CAN_Init(&hcan) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN CAN_Init 2 */
-  CAN_FilterTypeDef canfilterconfig;
-
-  canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
-  canfilterconfig.FilterBank = 10;
-  canfilterconfig.FilterFIFOAssignment = CAN_RX_FIFO0; //DATA WILL BE RECEIVED BY THIS
-  canfilterconfig.FilterIdHigh = 0x103<<5;
-  canfilterconfig.FilterIdLow = 0x0000;
-  canfilterconfig.FilterMaskIdHigh = 0x103<<5;
-  canfilterconfig.FilterMaskIdLow = 0x0000;
-  canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK ;
-  canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
-
-  HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);
-
-  /* USER CODE END CAN_Init 2 */
-
-}
-
-/**
   * @brief I2C1 Initialization Function
   * @param None
   * @retval None
@@ -700,7 +662,7 @@ static void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 8000-1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 5000-1;
+  htim3.Init.Period = 1000-1;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
@@ -769,22 +731,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : Push_Button_Pin */
-  GPIO_InitStruct.Pin = Push_Button_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(Push_Button_GPIO_Port, &GPIO_InitStruct);
-
   /*Configure GPIO pin : PA9 */
   GPIO_InitStruct.Pin = GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
